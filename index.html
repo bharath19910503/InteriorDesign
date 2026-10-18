@@ -145,80 +145,18 @@ function updateCounterAndPreview() {
   });
 }
 
-async function fetchImagesAsFiles(urls) {
-  const files = [];
-  for (let i = 0; i < urls.length; i++) {
-    try {
-      const res = await fetch(urls[i]);
-      const blob = await res.blob();
-      const ext = (blob.type && blob.type.split('/')[1]) || 'jpg';
-      const file = new File([blob], `design-${i + 1}.${ext}`, { type: blob.type || 'image/jpeg' });
-      files.push(file);
-    } catch (err) {
-      console.warn('Could not fetch image for sharing:', urls[i], err);
-    }
-  }
-  return files;
-}
-
-function buildWhatsAppLink(selectedUrls) {
-  const phone = "919916511599";
-  const message = "Selected designs:\n" + selectedUrls.join("\n");
-  const encoded = encodeURIComponent(message);
-  const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-  return isMobile
-    ? `https://wa.me/${phone}?text=${encoded}`
-    : `https://web.whatsapp.com/send?phone=${phone}&text=${encoded}`;
-}
-
-async function sendAllSelected() {
+// ✅ WhatsApp send function (working)
+function sendAllSelected() {
   const checkboxes = document.querySelectorAll(".select-design:checked");
   if (checkboxes.length === 0) {
     alert("Please select at least one image.");
     return;
   }
-  const selectedUrls = Array.from(checkboxes).map(cb => baseURL + cb.value);
-  const waLink = buildWhatsAppLink(selectedUrls);
-
-  console.log('Selected URLs:', selectedUrls);
-  console.log('WhatsApp link:', waLink);
-
-  // 1) Try Web Share API with files (best experience on mobile browsers that support it)
-  if (navigator.canShare && navigator.share) {
-    try {
-      const files = await fetchImagesAsFiles(selectedUrls);
-      if (files.length > 0 && navigator.canShare({ files })) {
-        await navigator.share({ files, text: 'Selected designs', title: 'Varshith Interior Designs' });
-        return; // shared successfully
-      }
-    } catch (err) {
-      console.warn('Web Share API failed or not supported for files:', err);
-      // fall through to link-based approach
-    }
-  }
-
-  // 2) Fallback: try programmatic anchor click (works better with some popup blockers)
-  try {
-    const a = document.createElement('a');
-    a.href = waLink;
-    a.target = '_blank';
-    a.rel = 'noopener noreferrer';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    return;
-  } catch (err) {
-    console.warn('Anchor click failed, falling back to window.open:', err);
-  }
-
-  // 3) Final fallback: window.open or navigate
-  try {
-    const win = window.open(waLink, '_blank');
-    if (!win) window.location.href = waLink;
-  } catch (err) {
-    console.error('Final WhatsApp open failed:', err);
-    window.location.href = waLink;
-  }
+  const selected = Array.from(checkboxes).map(cb => baseURL + cb.value);
+  const phone = "919916511599"; // your WhatsApp number in international format
+  const message = "Selected designs:\n" + selected.join("\n");
+  const url = "https://api.whatsapp.com/send?phone=" + phone + "&text=" + encodeURIComponent(message);
+  window.open(url, "_blank");
 }
 
 function clearSelections() {
