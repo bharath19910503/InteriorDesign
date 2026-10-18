@@ -11,13 +11,15 @@
     nav a:hover{text-decoration:underline;}
 
     .gallery{display:flex;gap:20px;padding:20px;flex-wrap:wrap;justify-content:center;}
-    .gallery-item{text-align:center;}
-    .gallery-item img{width:200px;border-radius:8px;border:2px solid #b08d57;}
-
-    @keyframes slideIn {
-      from { transform: translateX(-100%); opacity: 0; }
-      to { transform: translateX(0); opacity: 1; }
+    .gallery-item{text-align:center;animation:slideInRight 1s ease;}
+    .gallery-item img{
+      width:220px;
+      height:160px;
+      object-fit:cover;
+      border-radius:8px;
+      border:2px solid #b08d57;
     }
+
     @keyframes slideInRight {
       from { transform: translateX(100%); opacity: 0; }
       to { transform: translateX(0); opacity: 1; }
@@ -51,10 +53,7 @@
       100% { background-position: 0% 50%; }
     }
 
-    .controls {
-      text-align:center;
-      margin:20px;
-    }
+    .controls { text-align:center; margin:20px; }
     .send-btn, .clear-btn {
       margin:5px;
       padding:10px 20px;
@@ -78,6 +77,8 @@
     }
     #preview-panel img {
       width:100px;
+      height:70px;
+      object-fit:cover;
       border:2px solid #b08d57;
       border-radius:5px;
     }
@@ -134,11 +135,10 @@ async function loadGallery(section) {
     container.innerHTML = "";
 
     if (Array.isArray(files) && files.length > 0) {
-      files.forEach((file, index) => {
+      files.forEach(file => {
         if (/\.(jpg|jpeg|png)$/i.test(file.name)) {
           let div = document.createElement("div");
           div.className = "gallery-item";
-          div.style.animation = (index % 2 === 0) ? "slideIn 1s ease" : "slideInRight 1s ease";
           div.innerHTML = `
             <img src="${baseURL}${section}/${file.name}" alt="${file.name}" loading="lazy">
             <label><input type="checkbox" class="select-design" value="${section}/${file.name}"> Select</label>
