@@ -14,7 +14,6 @@
     .gallery-item{text-align:center;}
     .gallery-item img{width:200px;border-radius:8px;border:2px solid #b08d57;}
 
-    /* Animations */
     @keyframes slideIn {
       from { transform: translateX(-100%); opacity: 0; }
       to { transform: translateX(0); opacity: 1; }
@@ -43,20 +42,44 @@
       background-size: 400% 400%;
       animation: gradientShift 20s ease infinite;
     }
-    #quotation-overlay.show {
-      visibility: visible;
-      opacity: 1;
-      transition: opacity 2s ease;
-    }
-    #quotation-overlay.hide {
-      opacity: 0;
-      transition: opacity 2s ease, visibility 0s linear 2s;
-    }
+    #quotation-overlay.show { visibility: visible; opacity: 1; transition: opacity 2s ease; }
+    #quotation-overlay.hide { opacity: 0; transition: opacity 2s ease, visibility 0s linear 2s; }
 
     @keyframes gradientShift {
       0% { background-position: 0% 50%; }
       50% { background-position: 100% 50%; }
       100% { background-position: 0% 50%; }
+    }
+
+    .controls {
+      text-align:center;
+      margin:20px;
+    }
+    .send-btn, .clear-btn {
+      margin:5px;
+      padding:10px 20px;
+      background:#8c6a3d;
+      color:white;
+      border:none;
+      border-radius:5px;
+      cursor:pointer;
+      font-weight:bold;
+    }
+    .send-btn:hover, .clear-btn:hover { background:#b08d57; }
+
+    #selected-count { font-weight:bold; margin:10px; }
+
+    #preview-panel {
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      justify-content:center;
+      margin:20px;
+    }
+    #preview-panel img {
+      width:100px;
+      border:2px solid #b08d57;
+      border-radius:5px;
     }
   </style>
 </head>
@@ -73,6 +96,15 @@
 <section class="gallery" id="bedroom"><div id="bedroom-gallery"></div></section>
 <section class="gallery" id="kitchen" style="display:none;"><div id="kitchen-gallery"></div></section>
 <section class="gallery" id="tv" style="display:none;"><div id="tv-gallery"></div></section>
+
+<div class="controls">
+  <span id="selected-count">0 images selected</span><br>
+  <button class="send-btn" onclick="sendAllSelected()">Send All Selected Designs</button>
+  <button class="clear-btn" onclick="clearSelections()">Clear All Selections</button>
+</div>
+
+<!-- Preview panel -->
+<div id="preview-panel"></div>
 
 <!-- Quotation overlay -->
 <div id="quotation-overlay"></div>
@@ -137,11 +169,45 @@ document.querySelectorAll("nav a").forEach(link => {
   });
 });
 
-// WhatsApp integration
-function sendToWhatsApp(imagePath) {
+// Update counter and preview
+document.addEventListener("change", e => {
+  if (e.target.classList.contains("select-design")) {
+    updateCounterAndPreview();
+  }
+});
+
+function updateCounterAndPreview() {
+  const checkboxes = document.querySelectorAll(".select-design:checked");
+  document.getElementById("selected-count").textContent = `${checkboxes.length} images selected`;
+
+  const preview = document.getElementById("preview-panel");
+  preview.innerHTML = "";
+  checkboxes.forEach(cb => {
+    let img = document.createElement("img");
+    img.src = baseURL + cb.value;
+    preview.appendChild(img);
+  });
+}
+
+// Send all selected images across sections
+function sendAllSelected() {
+  const checkboxes = document.querySelectorAll(".select-design:checked");
+  if (checkboxes.length === 0) {
+    alert("Please select at least one image.");
+    return;
+  }
+  const selected = Array.from(checkboxes).map(cb => baseURL + cb.value);
   const phone = "919916511599"; // +91 India code
-  const url = `https://wa.me/${phone}?text=Check%20this%20design:%20${encodeURIComponent(baseURL + imagePath)}`;
+  const message = "Selected designs:\n" + selected.join("\n");
+  const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
   window.open(url, "_blank");
+  showQuotation();
+}
+
+// Clear all selections
+function clearSelections() {
+  document.querySelectorAll(".select-design").forEach(cb => cb.checked = false);
+  updateCounterAndPreview();
 }
 
 // Quotation overlay
@@ -161,14 +227,6 @@ function showQuotation() {
     }, 2000); // fade-out duration
   }, 20000); // 20 seconds
 }
-
-// Trigger WhatsApp + quotation when image selected
-document.addEventListener("change", e => {
-  if (e.target.classList.contains("select-design") && e.target.checked) {
-    sendToWhatsApp(e.target.value);
-    showQuotation();
-  }
-});
 
 // Default load
 showSection("bedroom");
