@@ -2,184 +2,394 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#8c6a3d">
   <title>Varshith Interior Solutions</title>
   <style>
-    body {margin:0;padding:0;font-family:'Montserrat',sans-serif;}
-    header {background:#b08d57;color:white;padding:15px;text-align:center;font-size:24px;font-weight:bold;}
-    nav {background:#8c6a3d;padding:10px;text-align:center;}
-    nav a {color:white;margin:0 15px;text-decoration:none;font-weight:bold;}
-    nav a:hover{text-decoration:underline;}
-
-    .gallery{display:flex;gap:20px;padding:20px;flex-wrap:wrap;justify-content:center;}
-    .gallery-item{text-align:center;animation:slideInRight 1s ease;}
-    .gallery-item img{
-      width:220px;
-      height:160px;
-      object-fit:cover;
-      border-radius:8px;
-      border:2px solid #b08d57;
+    :root {
+      --gold: #b08d57;
+      --brown: #8c6a3d;
+      --text: #2c241b;
+      --surface: #fffaf3;
     }
 
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: Montserrat, Arial, sans-serif;
+      line-height: 1.5;
+    }
+    header {
+      background: var(--gold);
+      color: #fff;
+      padding: 18px 12px;
+      text-align: center;
+      font-size: clamp(1.25rem, 4vw, 1.75rem);
+      font-weight: 700;
+    }
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px;
+      background: var(--brown);
+    }
+    nav a {
+      display: inline-block;
+      color: #fff;
+      margin: 0;
+      padding: 9px 13px;
+      border-radius: 5px;
+      text-decoration: none;
+      font-weight: 700;
+    }
+    nav a:hover, nav a:focus-visible, nav a[aria-current="page"] {
+      background: var(--gold);
+      outline-offset: 3px;
+    }
+
+    .gallery-section { padding: 12px; }
+    .gallery-section[hidden] { display: none; }
+    .gallery {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 18px;
+      padding: 12px 0;
+    }
+    .gallery-item {
+      width: 220px;
+      max-width: 100%;
+      text-align: center;
+      animation: slideInRight 0.5s ease both;
+    }
+    .gallery-item img {
+      display: block;
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      border: 2px solid var(--gold);
+      border-radius: 8px;
+      background: var(--surface);
+    }
+    .gallery-item label {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px;
+      cursor: pointer;
+    }
+    input[type="checkbox"] { accent-color: var(--brown); }
+    .status { text-align: center; padding: 18px 10px; }
+    .controls { text-align: center; margin: 20px 12px; }
+    .send-btn, .clear-btn {
+      margin: 5px;
+      padding: 11px 18px;
+      background: var(--brown);
+      color: #fff;
+      border: 0;
+      border-radius: 5px;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 700;
+    }
+    .send-btn:hover, .clear-btn:hover { background: var(--gold); }
+    button:focus-visible, a:focus-visible, input:focus-visible {
+      outline: 3px solid #24201a;
+      outline-offset: 3px;
+    }
+    #selected-count { display: block; margin: 10px; font-weight: 700; }
+    #preview-heading { text-align: center; margin: 18px 12px 0; }
+    #preview-panel {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 10px;
+      margin: 12px;
+      min-height: 80px;
+      padding: 12px;
+      border: 1px dashed var(--gold);
+      border-radius: 5px;
+    }
+    .preview-item { width: 100px; text-align: center; font-size: 0.8rem; overflow-wrap: anywhere; }
+    #preview-panel img {
+      display: block;
+      width: 100px;
+      height: 70px;
+      object-fit: cover;
+      border: 2px solid var(--gold);
+      border-radius: 5px;
+    }
+    .empty-preview { align-self: center; color: #62584b; }
     @keyframes slideInRight {
-      from { transform: translateX(100%); opacity: 0; }
+      from { transform: translateX(24px); opacity: 0; }
       to { transform: translateX(0); opacity: 1; }
     }
-
-    .controls { text-align:center; margin:20px; }
-    .send-btn, .clear-btn {
-      margin:5px;
-      padding:10px 20px;
-      background:#8c6a3d;
-      color:white;
-      border:none;
-      border-radius:5px;
-      cursor:pointer;
-      font-weight:bold;
-      display:inline-block;
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+      }
     }
-    .send-btn:hover, .clear-btn:hover { background:#b08d57; }
-
-    #selected-count { font-weight:bold; margin:10px; display:block; }
-
-    #preview-panel {
-      display:flex;
-      flex-wrap:wrap;
-      gap:10px;
-      justify-content:center;
-      margin:20px;
-      min-height:80px; /* ensures panel is always visible */
-      border:1px dashed #b08d57;
-      padding:10px;
-      border-radius:5px;
-    }
-    #preview-panel img {
-      width:100px;
-      height:70px;
-      object-fit:cover;
-      border:2px solid #b08d57;
-      border-radius:5px;
+    @media (max-width: 480px) {
+      .gallery-item { width: min(100%, 320px); }
+      .gallery-item img { height: 200px; }
+      .send-btn, .clear-btn { width: min(100%, 320px); }
     }
   </style>
 </head>
 <body>
+  <header>Varshith Interior Solutions</header>
 
-<header>Varshith Interior Solutions</header>
+  <nav aria-label="Design categories">
+    <a href="#bedroom" data-section="bedroom" aria-controls="bedroom" aria-current="page">Bedroom</a>
+    <a href="#kitchen" data-section="kitchen" aria-controls="kitchen">Kitchen</a>
+    <a href="#tv" data-section="tv" aria-controls="tv">TV Unit</a>
+  </nav>
 
-<nav>
-  <a href="#bedroom">Bedroom</a>
-  <a href="#kitchen">Kitchen</a>
-  <a href="#tv">TV Unit</a>
-</nav>
+  <main>
+    <section class="gallery-section" id="bedroom" aria-label="Bedroom designs">
+      <div class="gallery" id="bedroom-gallery" aria-live="polite"><p class="status">Loading bedroom designs…</p></div>
+    </section>
+    <section class="gallery-section" id="kitchen" aria-label="Kitchen designs" hidden>
+      <div class="gallery" id="kitchen-gallery" aria-live="polite"></div>
+    </section>
+    <section class="gallery-section" id="tv" aria-label="TV unit designs" hidden>
+      <div class="gallery" id="tv-gallery" aria-live="polite"></div>
+    </section>
 
-<section class="gallery" id="bedroom"><div id="bedroom-gallery"></div></section>
-<section class="gallery" id="kitchen" style="display:none;"><div id="kitchen-gallery"></div></section>
-<section class="gallery" id="tv" style="display:none;"><div id="tv-gallery"></div></section>
+    <div class="controls">
+      <span id="selected-count" aria-live="polite">0 images selected</span>
+      <button class="send-btn" id="send-button" type="button">Send Selected Designs on WhatsApp</button>
+      <button class="clear-btn" id="clear-button" type="button">Clear All Selections</button>
+    </div>
 
-<div class="controls">
-  <span id="selected-count">0 images selected</span>
-  <button class="send-btn" onclick="sendAllSelected()">Send All Selected Designs</button>
-  <button class="clear-btn" onclick="clearSelections()">Clear All Selections</button>
-</div>
+    <h2 id="preview-heading">Selected design previews</h2>
+    <div id="preview-panel" aria-live="polite" aria-labelledby="preview-heading">
+      <p class="empty-preview">Your selected designs will appear here.</p>
+    </div>
+  </main>
 
-<div id="preview-panel"></div>
+  <script>
+    "use strict";
 
-<script>
-const baseURL = "https://bharath19910503.github.io/InteriorDesign/images/";
+    const REPOSITORY_API = "https://api.github.com/repos/bharath19910503/InteriorDesign/contents/images";
+    const IMAGE_BASE_URL = "https://bharath19910503.github.io/InteriorDesign/images/";
+    // Use the recipient's WhatsApp number in international format, digits only.
+    const WHATSAPP_PHONE = "919916511599";
+    const SECTIONS = ["bedroom", "kitchen", "tv"];
+    const loadedSections = new Set();
+    const loadingSections = new Map();
+    const selectedDesigns = new Map();
 
-// Load gallery dynamically from GitHub
-async function loadGallery(section) {
-  const container = document.getElementById(section + "-gallery");
-  container.innerHTML = "<p>Loading...</p>";
+    const countElement = document.getElementById("selected-count");
+    const previewPanel = document.getElementById("preview-panel");
 
-  try {
-    const response = await fetch(`https://api.github.com/repos/bharath19910503/InteriorDesign/contents/images/${section}`);
-    const files = await response.json();
-
-    container.innerHTML = "";
-
-    if (Array.isArray(files) && files.length > 0) {
-      files.forEach(file => {
-        if (/\.(jpg|jpeg|png)$/i.test(file.name)) {
-          let div = document.createElement("div");
-          div.className = "gallery-item";
-          div.innerHTML = `
-            <img src="${baseURL}${section}/${file.name}" alt="${file.name}" loading="lazy">
-            <label><input type="checkbox" class="select-design" value="${section}/${file.name}"> Select</label>
-          `;
-          container.appendChild(div);
-        }
-      });
-    } else {
-      container.innerHTML = "<p>No images found in this section.</p>";
+    function imageUrl(path) {
+      return IMAGE_BASE_URL + path.split("/").map(encodeURIComponent).join("/");
     }
-  } catch (error) {
-    container.innerHTML = "<p>Error loading images. Please try again later.</p>";
-    console.error("Gallery load error:", error);
-  }
-}
 
-function showSection(section) {
-  ["bedroom","kitchen","tv"].forEach(s => {
-    document.getElementById(s).style.display = (s === section) ? "block" : "none";
-  });
-  loadGallery(section);
-}
+    function showStatus(container, message) {
+      container.replaceChildren();
+      const paragraph = document.createElement("p");
+      paragraph.className = "status";
+      paragraph.textContent = message;
+      container.appendChild(paragraph);
+    }
 
-document.querySelectorAll("nav a").forEach(link => {
-  link.addEventListener("click", e => {
-    const section = e.target.getAttribute("href").substring(1);
-    showSection(section);
-  });
-});
+    function makeGalleryItem(section, file) {
+      const path = `${section}/${file.name}`;
+      const item = document.createElement("div");
+      item.className = "gallery-item";
 
-document.addEventListener("change", e => {
-  if (e.target.classList.contains("select-design")) {
+      const img = document.createElement("img");
+      img.src = imageUrl(path);
+      img.alt = `${section} design: ${file.name}`;
+      img.loading = "lazy";
+      img.decoding = "async";
+      img.addEventListener("error", () => {
+        img.alt = `Unable to load ${file.name}`;
+        img.removeAttribute("src");
+        img.insertAdjacentText("afterend", "Image could not be loaded.");
+      }, { once: true });
+
+      const label = document.createElement("label");
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.className = "select-design";
+      checkbox.value = path;
+      checkbox.checked = selectedDesigns.has(path);
+      checkbox.setAttribute("aria-label", `Select ${section} design ${file.name}`);
+      checkbox.addEventListener("change", () => {
+        if (checkbox.checked) selectedDesigns.set(path, { path, name: file.name, section });
+        else selectedDesigns.delete(path);
+        updateCounterAndPreview();
+      });
+
+      label.append(checkbox, document.createTextNode(" Select"));
+      item.append(img, label);
+      return item;
+    }
+
+    async function loadGallery(section) {
+      if (!SECTIONS.includes(section)) return;
+      const container = document.getElementById(`${section}-gallery`);
+      if (loadedSections.has(section)) return;
+      if (loadingSections.has(section)) return loadingSections.get(section);
+
+      const request = (async () => {
+        showStatus(container, `Loading ${section} designs…`);
+        try {
+          const response = await fetch(`${REPOSITORY_API}/${encodeURIComponent(section)}`, {
+            headers: { Accept: "application/vnd.github+json" }
+          });
+
+          if (!response.ok) {
+            if (response.status === 404) {
+              throw new Error("Folder not found. Check the repository folder name and capitalization.");
+            }
+            if (response.status === 403 || response.status === 429) {
+              throw new Error("GitHub API rate limit reached. Please try again later.");
+            }
+            throw new Error(`GitHub returned HTTP ${response.status}.`);
+          }
+
+          const files = await response.json();
+          if (!Array.isArray(files)) {
+            throw new Error("The GitHub API response was not a folder listing.");
+          }
+
+          const imageFiles = files
+            .filter(file => file && file.type === "file" && /\.(jpe?g|png|webp|gif)$/i.test(file.name || ""))
+            .sort((a, b) => a.name.localeCompare(b.name));
+
+          container.replaceChildren();
+          if (imageFiles.length === 0) {
+            showStatus(container, "No supported images found in this section.");
+          } else {
+            imageFiles.forEach(file => container.appendChild(makeGalleryItem(section, file)));
+          }
+          loadedSections.add(section);
+        } catch (error) {
+          console.error(`Could not load ${section} gallery:`, error);
+          showStatus(container, `${error.message || "Unable to load images."} Check your internet connection and repository settings.`);
+          const retry = document.createElement("button");
+          retry.type = "button";
+          retry.className = "clear-btn";
+          retry.textContent = "Retry";
+          retry.addEventListener("click", () => {
+            loadedSections.delete(section);
+            loadingSections.delete(section);
+            loadGallery(section);
+          });
+          container.appendChild(retry);
+        } finally {
+          loadingSections.delete(section);
+        }
+      })();
+
+      loadingSections.set(section, request);
+      return request;
+    }
+
+    function showSection(section, updateHash = false) {
+      if (!SECTIONS.includes(section)) section = "bedroom";
+
+      SECTIONS.forEach(name => {
+        const panel = document.getElementById(name);
+        panel.hidden = name !== section;
+      });
+
+      document.querySelectorAll("nav a[data-section]").forEach(link => {
+        if (link.dataset.section === section) link.setAttribute("aria-current", "page");
+        else link.removeAttribute("aria-current");
+      });
+
+      if (updateHash && window.location.hash !== `#${section}`) {
+        history.replaceState(null, "", `#${section}`);
+      }
+      loadGallery(section);
+    }
+
+    function updateCounterAndPreview() {
+      const count = selectedDesigns.size;
+      countElement.textContent = `${count} image${count === 1 ? "" : "s"} selected`;
+      previewPanel.replaceChildren();
+
+      if (count === 0) {
+        const message = document.createElement("p");
+        message.className = "empty-preview";
+        message.textContent = "Your selected designs will appear here.";
+        previewPanel.appendChild(message);
+        return;
+      }
+
+      selectedDesigns.forEach(({ path, name, section }) => {
+        const item = document.createElement("div");
+        item.className = "preview-item";
+        const img = document.createElement("img");
+        img.src = imageUrl(path);
+        img.alt = `${section} design preview: ${name}`;
+        img.loading = "lazy";
+        img.addEventListener("error", () => {
+          img.alt = `Unable to load preview for ${name}`;
+          img.removeAttribute("src");
+        }, { once: true });
+        const caption = document.createElement("span");
+        caption.textContent = name;
+        item.append(img, caption);
+        previewPanel.appendChild(item);
+      });
+    }
+
+    function sendAllSelected() {
+      if (selectedDesigns.size === 0) {
+        alert("Please select at least one image.");
+        return;
+      }
+      if (!/^\d{8,15}$/.test(WHATSAPP_PHONE)) {
+        alert("The WhatsApp recipient number is not configured correctly.");
+        return;
+      }
+
+      const links = Array.from(selectedDesigns.values(), design =>
+        `${design.section}: ${imageUrl(design.path)}`
+      );
+      const message = "Hello, I am interested in these interior designs:\n\n" +
+        links.join("\n") +
+        "\n\nPlease share more details. Thank you!";
+      const url = `https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(message)}`;
+      window.open(url, "_blank", "noopener,noreferrer");
+    }
+
+    function clearSelections() {
+      selectedDesigns.clear();
+      document.querySelectorAll(".select-design").forEach(checkbox => {
+        checkbox.checked = false;
+      });
+      updateCounterAndPreview();
+    }
+
+    document.querySelectorAll("nav a[data-section]").forEach(link => {
+      link.addEventListener("click", event => {
+        event.preventDefault();
+        showSection(link.dataset.section, true);
+      });
+    });
+
+    document.getElementById("send-button").addEventListener("click", sendAllSelected);
+    document.getElementById("clear-button").addEventListener("click", clearSelections);
+
+    window.addEventListener("hashchange", () => {
+      showSection(window.location.hash.slice(1) || "bedroom");
+    });
+
+    showSection(window.location.hash.slice(1) || "bedroom");
     updateCounterAndPreview();
-  }
-});
-
-function updateCounterAndPreview() {
-  const checkboxes = document.querySelectorAll(".select-design:checked");
-  document.getElementById("selected-count").textContent = `${checkboxes.length} images selected`;
-
-  const preview = document.getElementById("preview-panel");
-  preview.innerHTML = "";
-  checkboxes.forEach(cb => {
-    let img = document.createElement("img");
-    img.src = baseURL + cb.value;
-    preview.appendChild(img);
-  });
-}
-
-// WhatsApp send function
-function sendAllSelected() {
-  const checkboxes = document.querySelectorAll(".select-design:checked");
-  if (checkboxes.length === 0) {
-    alert("Please select at least one image.");
-    return;
-  }
-  const selected = Array.from(checkboxes).map(cb => baseURL + cb.value);
-
-  // Receiver’s WhatsApp number in international format
-  const phone = "919916511599"; 
-
-  // Build message with all selected image links
-  const message = "Selected designs:\n" + selected.join("\n");
-
-  // WhatsApp link format
-  const url = "https://wa.me/" + phone + "?text=" + encodeURIComponent(message);
-
-  // Open WhatsApp Web
-  window.open(url, "_blank");
-}
-
-function clearSelections() {
-  document.querySelectorAll(".select-design").forEach(cb => cb.checked = false);
-  updateCounterAndPreview(); // ensures counter resets and preview clears
-}
-
-// Default load
-showSection("bedroom");
-</script>
+  </script>
 </body>
 </html>
