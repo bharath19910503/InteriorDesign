@@ -145,18 +145,41 @@ function updateCounterAndPreview() {
   });
 }
 
-// ✅ WhatsApp send function (working)
+// ✅ WhatsApp send function (improved)
 function sendAllSelected() {
   const checkboxes = document.querySelectorAll(".select-design:checked");
   if (checkboxes.length === 0) {
     alert("Please select at least one image.");
     return;
   }
+
   const selected = Array.from(checkboxes).map(cb => baseURL + cb.value);
-  const phone = "919916511599"; // your WhatsApp number in international format
+  console.log("Selected images:", selected);
+
+  // Make sure phone is in international format without '+'
+  const phone = "919916511599"; // update if needed
   const message = "Selected designs:\n" + selected.join("\n");
-  const url = "https://api.whatsapp.com/send?phone=" + phone + "&text=" + encodeURIComponent(message);
-  window.open(url, "_blank");
+  const encoded = encodeURIComponent(message);
+
+  // Prefer wa.me for mobile/universal short link, web.whatsapp for desktop
+  const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+  const waLink = isMobile
+    ? `https://wa.me/${phone}?text=${encoded}`
+    : `https://web.whatsapp.com/send?phone=${phone}&text=${encoded}`;
+
+  console.log("Opening WhatsApp URL:", waLink);
+
+  // Try opening in new tab; fallback to current tab if blocked
+  try {
+    const win = window.open(waLink, "_blank");
+    if (!win) {
+      // popup blocked — navigate in same tab
+      window.location.href = waLink;
+    }
+  } catch (err) {
+    console.error("Could not open WhatsApp link:", err);
+    window.location.href = waLink;
+  }
 }
 
 function clearSelections() {
