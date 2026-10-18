@@ -25,34 +25,6 @@
       to { transform: translateX(0); opacity: 1; }
     }
 
-    /* Quotation overlay */
-    #quotation-overlay {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      color: white;
-      font-size: 28px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      z-index: 9999;
-      visibility: hidden;
-      opacity: 0;
-      transition: opacity 2s ease, visibility 0s linear 2s;
-      background: linear-gradient(-45deg, #b08d57, #8c6a3d, #d4af37, #fff8e7);
-      background-size: 400% 400%;
-      animation: gradientShift 20s ease infinite;
-    }
-    #quotation-overlay.show { visibility: visible; opacity: 1; transition: opacity 2s ease; }
-    #quotation-overlay.hide { opacity: 0; transition: opacity 2s ease, visibility 0s linear 2s; }
-
-    @keyframes gradientShift {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
-
     .controls { text-align:center; margin:20px; }
     .send-btn, .clear-btn {
       margin:5px;
@@ -104,25 +76,10 @@
   <button class="clear-btn" onclick="clearSelections()">Clear All Selections</button>
 </div>
 
-<!-- Preview panel -->
 <div id="preview-panel"></div>
-
-<!-- Quotation overlay -->
-<div id="quotation-overlay"></div>
 
 <script>
 const baseURL = "https://bharath19910503.github.io/InteriorDesign/images/";
-
-const quotes = [
-  "Design is not just what it looks like, but how it makes you feel.",
-  "A room should never allow the eye to settle in one place. It should smile at you and create fantasy. – Juan Montoya",
-  "Your home should tell the story of who you are, and be a collection of what you love. – Nate Berkus",
-  "Simplicity is the ultimate sophistication. – Leonardo da Vinci",
-  "Good design is a language, not a style. – Massimo Vignelli",
-  "Luxury must be comfortable, otherwise it is not luxury. – Coco Chanel",
-  "An interior is the natural projection of the soul. – Coco Chanel",
-  "Design adds value faster than it adds cost. – Joel Spolsky"
-];
 
 async function loadGallery(section) {
   const container = document.getElementById(section + "-gallery");
@@ -169,7 +126,6 @@ document.querySelectorAll("nav a").forEach(link => {
   });
 });
 
-// Update counter and preview
 document.addEventListener("change", e => {
   if (e.target.classList.contains("select-design")) {
     updateCounterAndPreview();
@@ -189,7 +145,7 @@ function updateCounterAndPreview() {
   });
 }
 
-// Send all selected images across sections to WhatsApp number 9916511599
+// ✅ Fixed WhatsApp send function
 function sendAllSelected() {
   const checkboxes = document.querySelectorAll(".select-design:checked");
   if (checkboxes.length === 0) {
@@ -197,35 +153,15 @@ function sendAllSelected() {
     return;
   }
   const selected = Array.from(checkboxes).map(cb => baseURL + cb.value);
-  const phone = "919916511599"; // Correct WhatsApp format for your number
+  const phone = "919916511599"; // Correct format for WhatsApp
   const message = "Selected designs:\n" + selected.join("\n");
   const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
   window.open(url, "_blank");
-  showQuotation();
 }
 
-// Clear all selections
 function clearSelections() {
   document.querySelectorAll(".select-design").forEach(cb => cb.checked = false);
   updateCounterAndPreview();
-}
-
-// Quotation overlay
-function showQuotation() {
-  const overlay = document.getElementById("quotation-overlay");
-  const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
-  overlay.innerHTML = `<p>${randomQuote}</p>`;
-
-  overlay.classList.add("show");
-
-  setTimeout(() => {
-    overlay.classList.remove("show");
-    overlay.classList.add("hide");
-
-    setTimeout(() => {
-      overlay.classList.remove("hide");
-    }, 2000); // fade-out duration
-  }, 20000); // 20 seconds
 }
 
 // Default load
