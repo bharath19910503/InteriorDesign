@@ -8,10 +8,37 @@
     header {background:#b08d57;color:white;padding:15px;text-align:center;font-size:24px;font-weight:bold;}
     nav {background:#8c6a3d;padding:10px;text-align:center;}
     nav a {color:white;margin:0 15px;text-decoration:none;font-weight:bold;}
+    nav a.active {text-decoration:underline; color:#ffd700;} /* highlight active */
     nav a:hover{text-decoration:underline;}
-    .gallery{display:flex;gap:20px;padding:20px;flex-wrap:wrap;justify-content:center;}
-    .gallery-item{text-align:center;}
-    .gallery-item img{width:200px;border-radius:8px;border:2px solid #b08d57;}
+
+    .gallery-container {position: relative; display:none;} /* hidden until selected */
+    .gallery {
+      display: flex;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      gap: 20px;
+      padding: 20px;
+      scroll-behavior: smooth;
+    }
+    .gallery-item {flex: 0 0 auto; scroll-snap-align: center;}
+    .gallery-item img {width:300px;border-radius:8px;border:2px solid #b08d57;}
+
+    .arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: #8c6a3d;
+      color: white;
+      border: none;
+      padding: 10px;
+      cursor: pointer;
+      font-size: 18px;
+      border-radius: 50%;
+      opacity: 0.7;
+    }
+    .arrow:hover {opacity: 1;}
+    .arrow.left {left: 10px;}
+    .arrow.right {right: 10px;}
   </style>
 </head>
 <body>
@@ -19,28 +46,51 @@
 <header>Varshith Interior Solutions</header>
 
 <nav>
-  <a href="#bedroom">Bedroom</a>
+  <a href="#bedroom" class="active">Bedroom</a>
   <a href="#kitchen">Kitchen</a>
   <a href="#tv">TV Unit</a>
 </nav>
 
-<section class="gallery" id="bedroom"><div id="bedroom-gallery"></div></section>
-<section class="gallery" id="kitchen"><div id="kitchen-gallery"></div></section>
-<section class="gallery" id="tv"><div id="tv-gallery"></div></section>
+<section class="gallery-container" id="bedroom">
+  <button class="arrow left" onclick="scrollGallery('bedroom-gallery', -1)">&#10094;</button>
+  <div class="gallery" id="bedroom-gallery"></div>
+  <button class="arrow right" onclick="scrollGallery('bedroom-gallery', 1)">&#10095;</button>
+</section>
+
+<section class="gallery-container" id="kitchen">
+  <button class="arrow left" onclick="scrollGallery('kitchen-gallery', -1)">&#10094;</button>
+  <div class="gallery" id="kitchen-gallery"></div>
+  <button class="arrow right" onclick="scrollGallery('kitchen-gallery', 1)">&#10095;</button>
+</section>
+
+<section class="gallery-container" id="tv">
+  <button class="arrow left" onclick="scrollGallery('tv-gallery', -1)">&#10094;</button>
+  <div class="gallery" id="tv-gallery"></div>
+  <button class="arrow right" onclick="scrollGallery('tv-gallery', 1)">&#10095;</button>
+</section>
 
 <script>
 const baseURL = "https://bharath19910503.github.io/InteriorDesign/images/";
 
 async function loadGallery(section) {
+  // Hide all galleries
+  ["bedroom","kitchen","tv"].forEach(s => {
+    document.getElementById(s).style.display = "none";
+    document.querySelector(`nav a[href="#${s}"]`).classList.remove("active");
+  });
+
+  // Show selected gallery
+  document.getElementById(section).style.display = "block";
+  document.querySelector(`nav a[href="#${section}"]`).classList.add("active");
+
   const container = document.getElementById(section + "-gallery");
   container.innerHTML = "";
 
-  // Fetch list of files in the specific folder (bedroom, kitchen, tv)
   const response = await fetch(`https://api.github.com/repos/bharath19910503/InteriorDesign/contents/images/${section}`);
   const files = await response.json();
 
   files.forEach(file => {
-    if (file.name.toLowerCase().endsWith(".jpg")) { // only show JPGs
+    if (file.name.toLowerCase().endsWith(".jpg")) {
       let div = document.createElement("div");
       div.className = "gallery-item";
       div.innerHTML = `
@@ -52,15 +102,22 @@ async function loadGallery(section) {
   });
 }
 
-// Load galleries when nav links are clicked
+function scrollGallery(id, direction) {
+  const container = document.getElementById(id);
+  const scrollAmount = 320; // width of image + gap
+  container.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
+}
+
+// Nav click events
 document.querySelectorAll("nav a").forEach(link => {
   link.addEventListener("click", e => {
+    e.preventDefault();
     const section = e.target.getAttribute("href").substring(1);
-    if (["bedroom","kitchen","tv"].includes(section)) loadGallery(section);
+    loadGallery(section);
   });
 });
 
-// Preload Bedroom gallery by default
+// Load Bedroom by default
 loadGallery("bedroom");
 </script>
 </body>
