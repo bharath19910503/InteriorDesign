@@ -11,10 +11,10 @@
     nav a:hover{text-decoration:underline;}
 
     .gallery{display:flex;gap:20px;padding:20px;flex-wrap:wrap;justify-content:center;}
-    .gallery-item{text-align:center;animation:slideIn 1s ease;}
-    .gallery-item:nth-child(even){animation:slideInRight 1s ease;}
+    .gallery-item{text-align:center;}
     .gallery-item img{width:200px;border-radius:8px;border:2px solid #b08d57;}
 
+    /* Animations */
     @keyframes slideIn {
       from { transform: translateX(-100%); opacity: 0; }
       to { transform: translateX(0); opacity: 1; }
@@ -26,7 +26,6 @@
 
     /* Quotation overlay */
     #quotation-overlay {
-      display: none;
       position: fixed;
       top: 0; left: 0;
       width: 100%; height: 100%;
@@ -37,14 +36,22 @@
       justify-content: center;
       text-align: center;
       z-index: 9999;
+      visibility: hidden;
       opacity: 0;
-      transition: opacity 2s ease;
+      transition: opacity 2s ease, visibility 0s linear 2s;
       background: linear-gradient(-45deg, #b08d57, #8c6a3d, #d4af37, #fff8e7);
       background-size: 400% 400%;
       animation: gradientShift 20s ease infinite;
     }
-    #quotation-overlay.show { display:flex; opacity:1; }
-    #quotation-overlay.hide { opacity:0; }
+    #quotation-overlay.show {
+      visibility: visible;
+      opacity: 1;
+      transition: opacity 2s ease;
+    }
+    #quotation-overlay.hide {
+      opacity: 0;
+      transition: opacity 2s ease, visibility 0s linear 2s;
+    }
 
     @keyframes gradientShift {
       0% { background-position: 0% 50%; }
@@ -95,10 +102,11 @@ async function loadGallery(section) {
     container.innerHTML = "";
 
     if (Array.isArray(files) && files.length > 0) {
-      files.forEach(file => {
+      files.forEach((file, index) => {
         if (/\.(jpg|jpeg|png)$/i.test(file.name)) {
           let div = document.createElement("div");
           div.className = "gallery-item";
+          div.style.animation = (index % 2 === 0) ? "slideIn 1s ease" : "slideInRight 1s ease";
           div.innerHTML = `
             <img src="${baseURL}${section}/${file.name}" alt="${file.name}" loading="lazy">
             <label><input type="checkbox" class="select-design" value="${section}/${file.name}"> Select</label>
@@ -143,14 +151,12 @@ function showQuotation() {
   overlay.innerHTML = `<p>${randomQuote}</p>`;
 
   overlay.classList.add("show");
-  overlay.style.display = "flex";
 
   setTimeout(() => {
     overlay.classList.remove("show");
     overlay.classList.add("hide");
 
     setTimeout(() => {
-      overlay.style.display = "none";
       overlay.classList.remove("hide");
     }, 2000); // fade-out duration
   }, 20000); // 20 seconds
