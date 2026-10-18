@@ -197,7 +197,7 @@ function sendAllSelected() {
     return;
   }
   const selected = Array.from(checkboxes).map(cb => baseURL + cb.value);
-  const phone = "919916511599"; // your WhatsApp number
+  const phone = "919916511599"; // Correct WhatsApp format for your number
   const message = "Selected designs:\n" + selected.join("\n");
   const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
   window.open(url, "_blank");
