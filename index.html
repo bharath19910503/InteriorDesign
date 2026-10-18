@@ -177,8 +177,8 @@
   <script>
     "use strict";
 
-    const REPOSITORY_API = "https://api.github.com/repos/bharath19910503/InteriorDesign/contents/images";
-    const IMAGE_BASE_URL = "https://bharath19910503.github.io/InteriorDesign/images/";
+    const REPOSITORY_API = "https://api.github.com/repos/bharath19910503/InteriorDesign/contents/images?ref=main";
+    const IMAGE_BASE_URL = "https://raw.githubusercontent.com/bharath19910503/InteriorDesign/main/images/";
     // Use the recipient's WhatsApp number in international format, digits only.
     const WHATSAPP_PHONE = "919916511599";
     const SECTIONS = ["bedroom", "kitchen", "tv"];
@@ -261,11 +261,18 @@
       img.alt = `${section} design: ${file.name}`;
       img.loading = "lazy";
       img.decoding = "async";
+      img.dataset.fallbackTried = "false";
       img.addEventListener("error", () => {
+        if (img.dataset.fallbackTried === "false") {
+          img.dataset.fallbackTried = "true";
+          img.src = `https://bharath19910503.github.io/InteriorDesign/images/${path.split("/").map(encodeURIComponent).join("/")}`;
+          return;
+        }
+
         selectedDesigns.delete(path);
         item.remove();
         updateCounterAndPreview();
-      }, { once: true });
+      }, { once: false });
 
       const label = document.createElement("label");
       const checkbox = document.createElement("input");
@@ -307,7 +314,7 @@
       const request = (async () => {
         showStatus(container, `Loading ${section} designs…`);
         try {
-          const response = await fetch(`${REPOSITORY_API}/${encodeURIComponent(section)}`, {
+          const response = await fetch(`${REPOSITORY_API}/${encodeURIComponent(section)}&ref=main`, {
             headers: { Accept: "application/vnd.github+json" }
           });
 
@@ -410,11 +417,18 @@
         img.src = imageUrl(path);
         img.alt = `${section} design preview: ${name}`;
         img.loading = "lazy";
+        img.dataset.fallbackTried = "false";
         img.addEventListener("error", () => {
+          if (img.dataset.fallbackTried === "false") {
+            img.dataset.fallbackTried = "true";
+            img.src = `https://bharath19910503.github.io/InteriorDesign/images/${path.split("/").map(encodeURIComponent).join("/")}`;
+            return;
+          }
+
           item.remove();
           selectedDesigns.delete(path);
           updateCounterAndPreview();
-        }, { once: true });
+        }, { once: false });
         const caption = document.createElement("span");
         caption.textContent = name;
         item.append(img, caption);
