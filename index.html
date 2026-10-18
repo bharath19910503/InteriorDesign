@@ -189,8 +189,53 @@
     const countElement = document.getElementById("selected-count");
     const previewPanel = document.getElementById("preview-panel");
 
-    function imageUrl(path) {
-      return IMAGE_BASE_URL + path.split("/").map(encodeURIComponent).join("/");
+    /*
+     * IMAGE DISPLAY RULES
+     * -------------------
+     * 1. Replace watermark images by adding their exact file names below.
+     *    Example:
+     *      "bedroom/old-watermark.jpg": "bedroom/new-image.jpg"
+     *
+     * 2. Hide images that are blank, contain people, or contain unwanted
+     *    wording/text by adding their file names/path patterns below.
+     *
+     * These rules work before an image is displayed, so unwanted files are
+     * never shown in the gallery.
+     */
+    const WATERMARK_REPLACEMENTS = {
+      // "bedroom/watermark.jpg": "bedroom/bedroom-01.jpg",
+      // "kitchen/watermark.png": "kitchen/kitchen-01.png",
+      // "tv/watermark.webp": "tv/tv-01.webp",
+    };
+
+    const HIDDEN_IMAGE_PATTERNS = [
+      // Add exact paths or distinctive filename text here.
+      // "bedroom/person.jpg",
+      // "kitchen/with-people.png",
+      // "tv/sample-watermarked.jpg",
+    ];
+
+    function normalizePath(value) {
+      return String(value || "").replace(/\\/g, "/").toLowerCase().trim();
+    }
+
+    function isHiddenImage(path) {
+      const normalized = normalizePath(path);
+      return HIDDEN_IMAGE_PATTERNS.some(pattern =>
+        normalized === normalizePath(pattern) ||
+        normalized.includes(normalizePath(pattern))
+      );
+    }
+
+    function getDisplayPath(section, fileName) {
+      const originalPath = `${section}/${fileName}`;
+      const replacement = WATERMARK_REPLACEMENTS[originalPath];
+
+      if (replacement) {
+        return replacement;
+      }
+
+      return originalPath;
     }
 
     function showStatus(container, message) {
@@ -202,7 +247,12 @@
     }
 
     function makeGalleryItem(section, file) {
-      const path = `${section}/${file.name}`;
+      const originalPath = `${section}/${file.name}`;
+      const path = getDisplayPath(section, file.name);
+
+      if (isHiddenImage(originalPath) || isHiddenImage(path)) {
+        return null;
+      }
       const item = document.createElement("div");
       item.className = "gallery-item";
 
@@ -212,9 +262,9 @@
       img.loading = "lazy";
       img.decoding = "async";
       img.addEventListener("error", () => {
-        img.alt = `Unable to load ${file.name}`;
-        img.removeAttribute("src");
-        img.insertAdjacentText("afterend", "Image could not be loaded.");
+        selectedDesigns.delete(path);
+        item.remove();
+        updateCounterAndPreview();
       }, { once: true });
 
       const label = document.createElement("label");
@@ -233,6 +283,19 @@
       label.append(checkbox, document.createTextNode(" Select"));
       item.append(img, label);
       return item;
+    }
+
+    /*
+     * Optional metadata-based filtering.
+     *
+     * If your GitHub image files are accompanied by metadata in the future,
+     * this function can be extended to reject images containing people,
+     * blank images, or unwanted wording. Filename/path rules above work now.
+     */
+    function isKnownBadImage(file) {
+      const path = `${file?.path || ""}`;
+      const name = `${file?.name || ""}`;
+      return isHiddenImage(path) || isHiddenImage(name);
     }
 
     async function loadGallery(section) {
@@ -264,14 +327,26 @@
           }
 
           const imageFiles = files
-            .filter(file => file && file.type === "file" && /\.(jpe?g|png|webp|gif)$/i.test(file.name || ""))
+            .filter(file =>
+              file &&
+              file.type === "file" &&
+              /\.(jpe?g|png|webp|gif)$/i.test(file.name || "") &&
+              !isKnownBadImage(file)
+            )
             .sort((a, b) => a.name.localeCompare(b.name));
 
           container.replaceChildren();
           if (imageFiles.length === 0) {
             showStatus(container, "No supported images found in this section.");
           } else {
-            imageFiles.forEach(file => container.appendChild(makeGalleryItem(section, file)));
+            imageFiles.forEach(file => {
+              const item = makeGalleryItem(section, file);
+              if (item) container.appendChild(item);
+            });
+
+            if (container.children.length === 0) {
+              showStatus(container, "No suitable images found in this section.");
+            }
           }
           loadedSections.add(section);
         } catch (error) {
@@ -336,8 +411,9 @@
         img.alt = `${section} design preview: ${name}`;
         img.loading = "lazy";
         img.addEventListener("error", () => {
-          img.alt = `Unable to load preview for ${name}`;
-          img.removeAttribute("src");
+          item.remove();
+          selectedDesigns.delete(path);
+          updateCounterAndPreview();
         }, { once: true });
         const caption = document.createElement("span");
         caption.textContent = name;
