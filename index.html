@@ -145,40 +145,41 @@ function updateCounterAndPreview() {
   });
 }
 
-// ✅ WhatsApp send function (improved)
-function sendAllSelected() {
+function buildWhatsAppLink() {
   const checkboxes = document.querySelectorAll(".select-design:checked");
   if (checkboxes.length === 0) {
     alert("Please select at least one image.");
-    return;
+    return null;
   }
 
   const selected = Array.from(checkboxes).map(cb => baseURL + cb.value);
-  console.log("Selected images:", selected);
-
-  // Make sure phone is in international format without '+'
-  const phone = "919916511599"; // update if needed
+  const phone = "919916511599";
   const message = "Selected designs:\n" + selected.join("\n");
-  const encoded = encodeURIComponent(message);
+  const encodedMessage = encodeURIComponent(message);
 
-  // Prefer wa.me for mobile/universal short link, web.whatsapp for desktop
-  const isMobile = /Mobi|Android/i.test(navigator.userAgent);
-  const waLink = isMobile
-    ? `https://wa.me/${phone}?text=${encoded}`
-    : `https://web.whatsapp.com/send?phone=${phone}&text=${encoded}`;
+  const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  if (isMobile) {
+    return `https://wa.me/${phone}?text=${encodedMessage}`;
+  }
 
-  console.log("Opening WhatsApp URL:", waLink);
+  return `https://web.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`;
+}
 
-  // Try opening in new tab; fallback to current tab if blocked
+function sendAllSelected() {
+  const url = buildWhatsAppLink();
+  if (!url) return;
+
+  console.log("WhatsApp URL:", url);
+
   try {
-    const win = window.open(waLink, "_blank");
-    if (!win) {
-      // popup blocked — navigate in same tab
-      window.location.href = waLink;
+    const popup = window.open(url, "_blank");
+    if (!popup) {
+      window.location.href = url;
+      return;
     }
-  } catch (err) {
-    console.error("Could not open WhatsApp link:", err);
-    window.location.href = waLink;
+  } catch (error) {
+    console.error("WhatsApp open failed:", error);
+    window.location.href = url;
   }
 }
 
