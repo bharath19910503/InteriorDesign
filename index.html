@@ -81,6 +81,7 @@
 <script>
 const baseURL = "https://bharath19910503.github.io/InteriorDesign/images/";
 
+// Load gallery dynamically from GitHub
 async function loadGallery(section) {
   const container = document.getElementById(section + "-gallery");
   container.innerHTML = "<p>Loading...</p>";
@@ -145,7 +146,7 @@ function updateCounterAndPreview() {
   });
 }
 
-// ✅ WhatsApp send function (old working version)
+// ✅ WhatsApp send function
 function sendAllSelected() {
   const checkboxes = document.querySelectorAll(".select-design:checked");
   if (checkboxes.length === 0) {
@@ -153,9 +154,17 @@ function sendAllSelected() {
     return;
   }
   const selected = Array.from(checkboxes).map(cb => baseURL + cb.value);
-  const phone = "919916511599"; // your WhatsApp number in international format
+
+  // Receiver’s WhatsApp number in international format
+  const phone = "919916511599"; 
+
+  // Build message with all selected image links
   const message = "Selected designs:\n" + selected.join("\n");
+
+  // Reliable WhatsApp link format
   const url = "https://api.whatsapp.com/send?phone=" + phone + "&text=" + encodeURIComponent(message);
+
+  // Open WhatsApp Web
   window.open(url, "_blank");
 }
 
