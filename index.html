@@ -177,65 +177,30 @@
   <script>
     "use strict";
 
-    const REPOSITORY_API = "https://api.github.com/repos/bharath19910503/InteriorDesign/contents/images?ref=main";
-    const IMAGE_BASE_URL = "https://raw.githubusercontent.com/bharath19910503/InteriorDesign/main/images/";
-    // Use the recipient's WhatsApp number in international format, digits only.
+    // Public GitHub repository. We discover the actual folder names from /images
+    // instead of assuming they are lowercase, which fixes "No supported images"
+    // when GitHub folder capitalization differs.
+    const REPOSITORY_API = "https://api.github.com/repos/bharath19910503/InteriorDesign/contents/images";
+    const RAW_BASE_URL = "https://raw.githubusercontent.com/bharath19910503/InteriorDesign/main/images/";
+    const PAGES_BASE_URL = "https://bharath19910503.github.io/InteriorDesign/images/";
     const WHATSAPP_PHONE = "919916511599";
+
     const SECTIONS = ["bedroom", "kitchen", "tv"];
+    const SECTION_LABELS = { bedroom: "Bedroom", kitchen: "Kitchen", tv: "TV Unit" };
     const loadedSections = new Set();
     const loadingSections = new Map();
     const selectedDesigns = new Map();
+    let repositoryFolders = null;
 
     const countElement = document.getElementById("selected-count");
     const previewPanel = document.getElementById("preview-panel");
 
-    /*
-     * IMAGE DISPLAY RULES
-     * -------------------
-     * 1. Replace watermark images by adding their exact file names below.
-     *    Example:
-     *      "bedroom/old-watermark.jpg": "bedroom/new-image.jpg"
-     *
-     * 2. Hide images that are blank, contain people, or contain unwanted
-     *    wording/text by adding their file names/path patterns below.
-     *
-     * These rules work before an image is displayed, so unwanted files are
-     * never shown in the gallery.
-     */
-    const WATERMARK_REPLACEMENTS = {
-      // "bedroom/watermark.jpg": "bedroom/bedroom-01.jpg",
-      // "kitchen/watermark.png": "kitchen/kitchen-01.png",
-      // "tv/watermark.webp": "tv/tv-01.webp",
-    };
-
-    const HIDDEN_IMAGE_PATTERNS = [
-      // Add exact paths or distinctive filename text here.
-      // "bedroom/person.jpg",
-      // "kitchen/with-people.png",
-      // "tv/sample-watermarked.jpg",
-    ];
-
-    function normalizePath(value) {
-      return String(value || "").replace(/\\/g, "/").toLowerCase().trim();
+    function imageUrl(path) {
+      return RAW_BASE_URL + path.split("/").map(encodeURIComponent).join("/");
     }
 
-    function isHiddenImage(path) {
-      const normalized = normalizePath(path);
-      return HIDDEN_IMAGE_PATTERNS.some(pattern =>
-        normalized === normalizePath(pattern) ||
-        normalized.includes(normalizePath(pattern))
-      );
-    }
-
-    function getDisplayPath(section, fileName) {
-      const originalPath = `${section}/${fileName}`;
-      const replacement = WATERMARK_REPLACEMENTS[originalPath];
-
-      if (replacement) {
-        return replacement;
-      }
-
-      return originalPath;
+    function pagesImageUrl(path) {
+      return PAGES_BASE_URL + path.split("/").map(encodeURIComponent).join("/");
     }
 
     function showStatus(container, message) {
@@ -246,33 +211,70 @@
       container.appendChild(paragraph);
     }
 
-    function makeGalleryItem(section, file) {
-      const originalPath = `${section}/${file.name}`;
-      const path = getDisplayPath(section, file.name);
+    function isSupportedImage(file) {
+      return file && file.type === "file" && /\.(jpe?g|png|webp|gif)$/i.test(file.name || "");
+    }
 
-      if (isHiddenImage(originalPath) || isHiddenImage(path)) {
-        return null;
+    function isBadFilename(name) {
+      const n = String(name || "").toLowerCase();
+      return ["watermark", "logo", "blank", "sample", "placeholder"].some(x => n.includes(x));
+    }
+
+    async function githubJson(url) {
+      const response = await fetch(url, {
+        headers: { Accept: "application/vnd.github+json" },
+        cache: "no-store"
+      });
+      if (!response.ok) {
+        if (response.status === 403 || response.status === 429) {
+          throw new Error("GitHub API rate limit reached. Please try again later.");
+        }
+        throw new Error(`GitHub returned HTTP ${response.status}.`);
       }
+      return response.json();
+    }
+
+    async function discoverFolders() {
+      if (repositoryFolders) return repositoryFolders;
+      const root = await githubJson(`${REPOSITORY_API}?ref=main`);
+      if (!Array.isArray(root)) throw new Error("GitHub did not return the images folder listing.");
+
+      repositoryFolders = {};
+      for (const wanted of SECTIONS) {
+        // Match bedroom/Bedroom/BEDROOM etc. and also common TV names.
+        const aliases = wanted === "tv"
+          ? ["tv", "tvunit", "tv-unit", "tv_unit", "tv unit"]
+          : [wanted];
+        const match = root.find(item =>
+          item && item.type === "dir" && aliases.includes(String(item.name).trim().toLowerCase())
+        );
+        repositoryFolders[wanted] = match || null;
+      }
+      return repositoryFolders;
+    }
+
+    function makeGalleryItem(section, file) {
+      const path = file.path || `${section}/${file.name}`;
       const item = document.createElement("div");
       item.className = "gallery-item";
 
       const img = document.createElement("img");
-      img.src = imageUrl(path);
-      img.alt = `${section} design: ${file.name}`;
+      img.src = file.download_url || imageUrl(path);
+      img.alt = `${SECTION_LABELS[section]} design: ${file.name}`;
       img.loading = "lazy";
       img.decoding = "async";
-      img.dataset.fallbackTried = "false";
       img.addEventListener("error", () => {
-        if (img.dataset.fallbackTried === "false") {
-          img.dataset.fallbackTried = "true";
-          img.src = `https://bharath19910503.github.io/InteriorDesign/images/${path.split("/").map(encodeURIComponent).join("/")}`;
+        // Try GitHub Pages once before removing a broken image.
+        if (!img.dataset.fallback) {
+          img.dataset.fallback = "1";
+          img.src = pagesImageUrl(path);
           return;
         }
-
-        selectedDesigns.delete(path);
         item.remove();
-        updateCounterAndPreview();
-      }, { once: false });
+        if (item.parentElement && !item.parentElement.querySelector(".gallery-item")) {
+          showStatus(item.parentElement, "No loadable images found in this section.");
+        }
+      });
 
       const label = document.createElement("label");
       const checkbox = document.createElement("input");
@@ -280,9 +282,9 @@
       checkbox.className = "select-design";
       checkbox.value = path;
       checkbox.checked = selectedDesigns.has(path);
-      checkbox.setAttribute("aria-label", `Select ${section} design ${file.name}`);
+      checkbox.setAttribute("aria-label", `Select ${SECTION_LABELS[section]} design ${file.name}`);
       checkbox.addEventListener("change", () => {
-        if (checkbox.checked) selectedDesigns.set(path, { path, name: file.name, section });
+        if (checkbox.checked) selectedDesigns.set(path, { path, name: file.name, section, url: img.src });
         else selectedDesigns.delete(path);
         updateCounterAndPreview();
       });
@@ -292,19 +294,6 @@
       return item;
     }
 
-    /*
-     * Optional metadata-based filtering.
-     *
-     * If your GitHub image files are accompanied by metadata in the future,
-     * this function can be extended to reject images containing people,
-     * blank images, or unwanted wording. Filename/path rules above work now.
-     */
-    function isKnownBadImage(file) {
-      const path = `${file?.path || ""}`;
-      const name = `${file?.name || ""}`;
-      return isHiddenImage(path) || isHiddenImage(name);
-    }
-
     async function loadGallery(section) {
       if (!SECTIONS.includes(section)) return;
       const container = document.getElementById(`${section}-gallery`);
@@ -312,53 +301,32 @@
       if (loadingSections.has(section)) return loadingSections.get(section);
 
       const request = (async () => {
-        showStatus(container, `Loading ${section} designs…`);
+        showStatus(container, `Loading ${SECTION_LABELS[section]} designs…`);
         try {
-          const response = await fetch(`${REPOSITORY_API}/${encodeURIComponent(section)}&ref=main`, {
-            headers: { Accept: "application/vnd.github+json" }
-          });
-
-          if (!response.ok) {
-            if (response.status === 404) {
-              throw new Error("Folder not found. Check the repository folder name and capitalization.");
-            }
-            if (response.status === 403 || response.status === 429) {
-              throw new Error("GitHub API rate limit reached. Please try again later.");
-            }
-            throw new Error(`GitHub returned HTTP ${response.status}.`);
+          const folders = await discoverFolders();
+          const folder = folders[section];
+          if (!folder) {
+            throw new Error(`The repository does not contain a ${SECTION_LABELS[section]} folder inside images/.`);
           }
 
-          const files = await response.json();
-          if (!Array.isArray(files)) {
-            throw new Error("The GitHub API response was not a folder listing.");
-          }
+          const files = await githubJson(`${REPOSITORY_API}/${encodeURIComponent(folder.name)}?ref=main`);
+          if (!Array.isArray(files)) throw new Error("GitHub did not return a folder listing.");
 
           const imageFiles = files
-            .filter(file =>
-              file &&
-              file.type === "file" &&
-              /\.(jpe?g|png|webp|gif)$/i.test(file.name || "") &&
-              !isKnownBadImage(file)
-            )
+            .filter(isSupportedImage)
+            .filter(file => !isBadFilename(file.name))
             .sort((a, b) => a.name.localeCompare(b.name));
 
           container.replaceChildren();
-          if (imageFiles.length === 0) {
-            showStatus(container, "No supported images found in this section.");
+          if (!imageFiles.length) {
+            showStatus(container, `No supported images found in ${folder.name}/.`);
           } else {
-            imageFiles.forEach(file => {
-              const item = makeGalleryItem(section, file);
-              if (item) container.appendChild(item);
-            });
-
-            if (container.children.length === 0) {
-              showStatus(container, "No suitable images found in this section.");
-            }
+            imageFiles.forEach(file => container.appendChild(makeGalleryItem(section, file)));
+            loadedSections.add(section);
           }
-          loadedSections.add(section);
         } catch (error) {
           console.error(`Could not load ${section} gallery:`, error);
-          showStatus(container, `${error.message || "Unable to load images."} Check your internet connection and repository settings.`);
+          showStatus(container, `${error.message || "Unable to load images."}`);
           const retry = document.createElement("button");
           retry.type = "button";
           retry.className = "clear-btn";
@@ -366,6 +334,7 @@
           retry.addEventListener("click", () => {
             loadedSections.delete(section);
             loadingSections.delete(section);
+            repositoryFolders = null;
             loadGallery(section);
           });
           container.appendChild(retry);
@@ -380,20 +349,12 @@
 
     function showSection(section, updateHash = false) {
       if (!SECTIONS.includes(section)) section = "bedroom";
-
-      SECTIONS.forEach(name => {
-        const panel = document.getElementById(name);
-        panel.hidden = name !== section;
-      });
-
+      SECTIONS.forEach(name => document.getElementById(name).hidden = name !== section);
       document.querySelectorAll("nav a[data-section]").forEach(link => {
         if (link.dataset.section === section) link.setAttribute("aria-current", "page");
         else link.removeAttribute("aria-current");
       });
-
-      if (updateHash && window.location.hash !== `#${section}`) {
-        history.replaceState(null, "", `#${section}`);
-      }
+      if (updateHash && window.location.hash !== `#${section}`) history.replaceState(null, "", `#${section}`);
       loadGallery(section);
     }
 
@@ -401,34 +362,20 @@
       const count = selectedDesigns.size;
       countElement.textContent = `${count} image${count === 1 ? "" : "s"} selected`;
       previewPanel.replaceChildren();
-
-      if (count === 0) {
+      if (!count) {
         const message = document.createElement("p");
         message.className = "empty-preview";
         message.textContent = "Your selected designs will appear here.";
         previewPanel.appendChild(message);
         return;
       }
-
-      selectedDesigns.forEach(({ path, name, section }) => {
+      selectedDesigns.forEach(({ path, name, section, url }) => {
         const item = document.createElement("div");
         item.className = "preview-item";
         const img = document.createElement("img");
-        img.src = imageUrl(path);
-        img.alt = `${section} design preview: ${name}`;
+        img.src = url || imageUrl(path);
+        img.alt = `${SECTION_LABELS[section]} design preview: ${name}`;
         img.loading = "lazy";
-        img.dataset.fallbackTried = "false";
-        img.addEventListener("error", () => {
-          if (img.dataset.fallbackTried === "false") {
-            img.dataset.fallbackTried = "true";
-            img.src = `https://bharath19910503.github.io/InteriorDesign/images/${path.split("/").map(encodeURIComponent).join("/")}`;
-            return;
-          }
-
-          item.remove();
-          selectedDesigns.delete(path);
-          updateCounterAndPreview();
-        }, { once: false });
         const caption = document.createElement("span");
         caption.textContent = name;
         item.append(img, caption);
@@ -437,30 +384,18 @@
     }
 
     function sendAllSelected() {
-      if (selectedDesigns.size === 0) {
-        alert("Please select at least one image.");
-        return;
-      }
-      if (!/^\d{8,15}$/.test(WHATSAPP_PHONE)) {
-        alert("The WhatsApp recipient number is not configured correctly.");
-        return;
-      }
-
+      if (!selectedDesigns.size) return alert("Please select at least one image.");
       const links = Array.from(selectedDesigns.values(), design =>
-        `${design.section}: ${imageUrl(design.path)}`
+        `${SECTION_LABELS[design.section]}: ${imageUrl(design.path)}`
       );
-      const message = "Hello, I am interested in these interior designs:\n\n" +
-        links.join("\n") +
+      const message = "Hello, I am interested in these interior designs:\n\n" + links.join("\n") +
         "\n\nPlease share more details. Thank you!";
-      const url = `https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(message)}`;
-      window.open(url, "_blank", "noopener,noreferrer");
+      window.open(`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
     }
 
     function clearSelections() {
       selectedDesigns.clear();
-      document.querySelectorAll(".select-design").forEach(checkbox => {
-        checkbox.checked = false;
-      });
+      document.querySelectorAll(".select-design").forEach(checkbox => checkbox.checked = false);
       updateCounterAndPreview();
     }
 
@@ -470,13 +405,9 @@
         showSection(link.dataset.section, true);
       });
     });
-
     document.getElementById("send-button").addEventListener("click", sendAllSelected);
     document.getElementById("clear-button").addEventListener("click", clearSelections);
-
-    window.addEventListener("hashchange", () => {
-      showSection(window.location.hash.slice(1) || "bedroom");
-    });
+    window.addEventListener("hashchange", () => showSection(window.location.hash.slice(1) || "bedroom"));
 
     showSection(window.location.hash.slice(1) || "bedroom");
     updateCounterAndPreview();
