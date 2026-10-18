@@ -35,10 +35,11 @@
       border-radius:5px;
       cursor:pointer;
       font-weight:bold;
+      display:inline-block;
     }
     .send-btn:hover, .clear-btn:hover { background:#b08d57; }
 
-    #selected-count { font-weight:bold; margin:10px; }
+    #selected-count { font-weight:bold; margin:10px; display:block; }
 
     #preview-panel {
       display:flex;
@@ -46,6 +47,10 @@
       gap:10px;
       justify-content:center;
       margin:20px;
+      min-height:80px; /* ensures panel is always visible */
+      border:1px dashed #b08d57;
+      padding:10px;
+      border-radius:5px;
     }
     #preview-panel img {
       width:100px;
@@ -71,7 +76,7 @@
 <section class="gallery" id="tv" style="display:none;"><div id="tv-gallery"></div></section>
 
 <div class="controls">
-  <span id="selected-count">0 images selected</span><br>
+  <span id="selected-count">0 images selected</span>
   <button class="send-btn" onclick="sendAllSelected()">Send All Selected Designs</button>
   <button class="clear-btn" onclick="clearSelections()">Clear All Selections</button>
 </div>
@@ -146,7 +151,7 @@ function updateCounterAndPreview() {
   });
 }
 
-// ✅ WhatsApp send function
+// WhatsApp send function
 function sendAllSelected() {
   const checkboxes = document.querySelectorAll(".select-design:checked");
   if (checkboxes.length === 0) {
@@ -161,8 +166,8 @@ function sendAllSelected() {
   // Build message with all selected image links
   const message = "Selected designs:\n" + selected.join("\n");
 
-  // Reliable WhatsApp link format
-  const url = "https://api.whatsapp.com/send?phone=" + phone + "&text=" + encodeURIComponent(message);
+  // WhatsApp link format
+  const url = "https://wa.me/" + phone + "?text=" + encodeURIComponent(message);
 
   // Open WhatsApp Web
   window.open(url, "_blank");
@@ -170,7 +175,7 @@ function sendAllSelected() {
 
 function clearSelections() {
   document.querySelectorAll(".select-design").forEach(cb => cb.checked = false);
-  updateCounterAndPreview();
+  updateCounterAndPreview(); // ensures counter resets and preview clears
 }
 
 // Default load
