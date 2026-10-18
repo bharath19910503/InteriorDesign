@@ -9,9 +9,48 @@
     nav {background:#8c6a3d;padding:10px;text-align:center;}
     nav a {color:white;margin:0 15px;text-decoration:none;font-weight:bold;}
     nav a:hover{text-decoration:underline;}
+
     .gallery{display:flex;gap:20px;padding:20px;flex-wrap:wrap;justify-content:center;}
-    .gallery-item{text-align:center;}
+    .gallery-item{text-align:center;animation:slideIn 1s ease;}
+    .gallery-item:nth-child(even){animation:slideInRight 1s ease;}
     .gallery-item img{width:200px;border-radius:8px;border:2px solid #b08d57;}
+
+    @keyframes slideIn {
+      from { transform: translateX(-100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideInRight {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    /* Quotation overlay */
+    #quotation-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      color: white;
+      font-size: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      z-index: 9999;
+      opacity: 0;
+      transition: opacity 2s ease;
+      background: linear-gradient(-45deg, #b08d57, #8c6a3d, #d4af37, #fff8e7);
+      background-size: 400% 400%;
+      animation: gradientShift 20s ease infinite;
+    }
+    #quotation-overlay.show { display:flex; opacity:1; }
+    #quotation-overlay.hide { opacity:0; }
+
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
   </style>
 </head>
 <body>
@@ -25,43 +64,108 @@
 </nav>
 
 <section class="gallery" id="bedroom"><div id="bedroom-gallery"></div></section>
-<section class="gallery" id="kitchen"><div id="kitchen-gallery"></div></section>
-<section class="gallery" id="tv"><div id="tv-gallery"></div></section>
+<section class="gallery" id="kitchen" style="display:none;"><div id="kitchen-gallery"></div></section>
+<section class="gallery" id="tv" style="display:none;"><div id="tv-gallery"></div></section>
+
+<!-- Quotation overlay -->
+<div id="quotation-overlay"></div>
 
 <script>
 const baseURL = "https://bharath19910503.github.io/InteriorDesign/images/";
 
+const quotes = [
+  "Design is not just what it looks like, but how it makes you feel.",
+  "A room should never allow the eye to settle in one place. It should smile at you and create fantasy. – Juan Montoya",
+  "Your home should tell the story of who you are, and be a collection of what you love. – Nate Berkus",
+  "Simplicity is the ultimate sophistication. – Leonardo da Vinci",
+  "Good design is a language, not a style. – Massimo Vignelli",
+  "Luxury must be comfortable, otherwise it is not luxury. – Coco Chanel",
+  "An interior is the natural projection of the soul. – Coco Chanel",
+  "Design adds value faster than it adds cost. – Joel Spolsky"
+];
+
 async function loadGallery(section) {
   const container = document.getElementById(section + "-gallery");
-  container.innerHTML = "";
+  container.innerHTML = "<p>Loading...</p>";
 
-  // Fetch list of files in the specific folder (bedroom, kitchen, tv)
-  const response = await fetch(`https://api.github.com/repos/bharath19910503/InteriorDesign/contents/images/${section}`);
-  const files = await response.json();
+  try {
+    const response = await fetch(`https://api.github.com/repos/bharath19910503/InteriorDesign/contents/images/${section}`);
+    const files = await response.json();
 
-  files.forEach(file => {
-    if (file.name.toLowerCase().endsWith(".jpg")) { // only show JPGs
-      let div = document.createElement("div");
-      div.className = "gallery-item";
-      div.innerHTML = `
-        <img src="${baseURL}${section}/${file.name}" alt="${file.name}">
-        <label><input type="checkbox" class="select-design" value="${section}/${file.name}"> Select</label>
-      `;
-      container.appendChild(div);
+    container.innerHTML = "";
+
+    if (Array.isArray(files) && files.length > 0) {
+      files.forEach(file => {
+        if (/\.(jpg|jpeg|png)$/i.test(file.name)) {
+          let div = document.createElement("div");
+          div.className = "gallery-item";
+          div.innerHTML = `
+            <img src="${baseURL}${section}/${file.name}" alt="${file.name}" loading="lazy">
+            <label><input type="checkbox" class="select-design" value="${section}/${file.name}"> Select</label>
+          `;
+          container.appendChild(div);
+        }
+      });
+    } else {
+      container.innerHTML = "<p>No images found in this section.</p>";
     }
-  });
+  } catch (error) {
+    container.innerHTML = "<p>Error loading images. Please try again later.</p>";
+    console.error("Gallery load error:", error);
+  }
 }
 
-// Load galleries when nav links are clicked
+function showSection(section) {
+  ["bedroom","kitchen","tv"].forEach(s => {
+    document.getElementById(s).style.display = (s === section) ? "block" : "none";
+  });
+  loadGallery(section);
+}
+
 document.querySelectorAll("nav a").forEach(link => {
   link.addEventListener("click", e => {
     const section = e.target.getAttribute("href").substring(1);
-    if (["bedroom","kitchen","tv"].includes(section)) loadGallery(section);
+    showSection(section);
   });
 });
 
-// Preload Bedroom gallery by default
-loadGallery("bedroom");
+// WhatsApp integration
+function sendToWhatsApp(imagePath) {
+  const phone = "919916511599"; // +91 India code
+  const url = `https://wa.me/${phone}?text=Check%20this%20design:%20${encodeURIComponent(baseURL + imagePath)}`;
+  window.open(url, "_blank");
+}
+
+// Quotation overlay
+function showQuotation() {
+  const overlay = document.getElementById("quotation-overlay");
+  const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+  overlay.innerHTML = `<p>${randomQuote}</p>`;
+
+  overlay.classList.add("show");
+  overlay.style.display = "flex";
+
+  setTimeout(() => {
+    overlay.classList.remove("show");
+    overlay.classList.add("hide");
+
+    setTimeout(() => {
+      overlay.style.display = "none";
+      overlay.classList.remove("hide");
+    }, 2000); // fade-out duration
+  }, 20000); // 20 seconds
+}
+
+// Trigger WhatsApp + quotation when image selected
+document.addEventListener("change", e => {
+  if (e.target.classList.contains("select-design") && e.target.checked) {
+    sendToWhatsApp(e.target.value);
+    showQuotation();
+  }
+});
+
+// Default load
+showSection("bedroom");
 </script>
 </body>
 </html>
